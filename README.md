@@ -1,13 +1,14 @@
-# FrostByte - ESP-01 Temperature-Controlled Relay with M2302 (DHT22)
+# FrostByte - ESP-01S Temperature-Controlled Relay with M2302 (DHT22)
 
-This project uses an ESP-01 Wi-Fi module together with an M2302 (DHT22) temperature and humidity sensor to control a relay. The relay switches ON or OFF based on the **average temperature over the last 60 seconds**, using hysteresis to avoid rapid toggling.
+This project uses an ESP-01S Wi-Fi module together with an M2302 (DHT22) temperature and humidity sensor to control a relay. The relay switches ON or OFF based on the **average temperature over the last 60 seconds**, using hysteresis to avoid rapid toggling.
 
 ## 🔧 Hardware Components
 
-- ESP-01 (ESP8266)
+- ESP-01S Module (ESP8266)
 - M2302 (DHT22) temperature & humidity sensor
 - ESP-01S 1-Channel Relay Module, also called ESP-01S / ESP01S Relay Daughter Board. It has two screw terminals and a 2x4 pin-header compatible with ESP-01 board.
 - 5V power supply for the relay module, also powering the sensor and ESP-01
+- Wires
 
 ## ⚙️ Functionality
 
@@ -20,9 +21,9 @@ This project uses an ESP-01 Wi-Fi module together with an M2302 (DHT22) temperat
 
 ## 🌐 Wi-Fi Access Point + Web Interface
 
-The ESP-01 can act as its own Wi-Fi access point (AP) so you can connect to it directly (without an internet router) and monitor the temperature in a web browser.
+The ESP-01S can act as its own Wi-Fi access point (AP) so you can connect to it directly (without an internet router) and monitor the temperature in a web browser.
 
-- The ESP-01 starts in AP mode with a name _FrostByte_ and password _fridgelord_. These can be changed in the code.
+- The ESP-01S starts in AP mode with a name _FrostByte_ and password _fridgelord_. These can be changed in the code.
 - You can connect to it from your phone or computer via Wi-Fi.
 - After connecting, open a browser and go to http://192.168.4.1
 - The ESP will serve a simple HTML page showing the current average temperature and relay state.
@@ -43,15 +44,15 @@ lib_deps =
   adafruit/DHT sensor library@^1.4.3
   adafruit/Adafruit Unified Sensor@^1.1.9
 ```
-Information on how to program an **ESP-01** is available somewhere else.
+Information on how to program an **ESP-01S** is available somewhere else.
 
 ## 🔌 Wiring & Connections
 
-Below are the required connections to set up the **ESP-01** with the **M2302 (DHT22)** sensor and the **ESP-01S relay module**.
+Below are the required connections to set up the **ESP-01S** with the **M2302 (DHT22)** sensor and the **ESP-01S relay module**.
 
-### 🧩 ESP-01 to M2302 (DHT22)
+### 🧩 ESP-01S to M2302 (DHT22)
 
-You need to solder these directly on the **ESP-01S relay module**, as you slot the **ESP-01** in the 8-pin connector of the **ESP-01S relay module**.  Or splice three wires while you connect the **ESP-01** and **ESP-01S relay module** with 8 wires.
+You need to solder these directly on the **ESP-01S relay module**, as you slot the **ESP-01S** in the 8-pin connector of the **ESP-01S relay module**.  Or splice three wires while you connect the **ESP-01S** and **ESP-01S relay module** with 8 wires.
 
 | M2302 Pin | Connects To (ESP-01) | Notes                             |
 |-----------|----------------------|-----------------------------------|
@@ -65,7 +66,7 @@ You need to power it with 5V, and use the relay contacts to control/switch the f
 
 ### 🪛 Power Supply Notes
 
-- **ESP-01:** Requires a **regulated 3.3V** power supply, that is already included in the **ESP-01S relay module**, which requires 5V.
+- **ESP-01S:** Requires a **regulated 3.3V** power supply, that is already included in the **ESP-01S relay module**, which requires 5V.
 - **Relay module:** Needs **5V** to power the relay coil.  That is supplied in to the **ESP-01S relay module**.
 - **M2302 (DHT22):** Runs at 3.3V, not 5V.
-- Do **not** power the ESP-01 directly from USB or unregulated 5V.
+- Do **not** power the ESP-01S directly from USB or unregulated 5V.
