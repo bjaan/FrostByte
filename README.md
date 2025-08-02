@@ -6,7 +6,7 @@ This project uses an ESP-01S Wi-Fi module together with an M2302 (DHT22) tempera
 
 - ESP-01S Module (ESP8266)
 - M2302 (DHT22) temperature & humidity sensor
-- ESP-01S 1-Channel Relay Module, also called ESP-01S / ESP01S Relay Daughter Board. It has two screw terminals and a 2x4 pin-header compatible with ESP-01 board.
+- ESP-01S 1-Channel Relay Module, also called ESP-01S / ESP01S Relay Daughter Board. It has two screw terminals and a 2x4 pin-header compatible with ESP-01S Module.
 - 5V power supply for the relay module, also powering the sensor and ESP-01
 - Wires
 
