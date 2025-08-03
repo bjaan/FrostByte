@@ -8,8 +8,8 @@ const char* ssid     = "FrostByte";
 const char* password = "fridgelord";
 
 // fixed to cooler controller mode (switch < and > around below to turn in a thermostat)
-float desiredTemperature = 4.0f; // centrigrade
-float precisionTemperature = 1.0f; // centrigrade, i.e.  + and - range
+float desiredTemperature = 4.0f; // celsius
+float precisionTemperature = 1.0f; // celsius, i.e.  + and - range
 
 #define DHTPIN 2      // GPIO2
 #define DHTTYPE DHT22   // DHT22 = AM2302/M2302
@@ -108,9 +108,10 @@ const int NUM_SAMPLES = 30;          // 30 samples (every 2s = 1 minute)
 float tempSamples[NUM_SAMPLES];      // buffer for samples
 int sampleIndex = 0;
 bool bufferFilled = false;
-bool relayState = false;             // current state of the relais
+bool relayState = false;             // current state of the relay
+bool starting = true;
 
-String state = "Initialized.";
+String state = "";
 
 // put function declarations here:
 void createAccessPoint();
@@ -121,10 +122,6 @@ void respondPage(AsyncWebServerRequest *, String);
 void setup() {
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, HIGH); // relais off
-
-  // initialize on normal chamber temperature
-  for (int i = 0; i < NUM_SAMPLES; i++)
-    tempSamples[i] = 20;
 
   dht.begin();
 
@@ -157,16 +154,23 @@ void loop() {
     state = "<h3>Temperature: " + String(avgTemp, 2) + " °C</h3><br/>";
 
     // hysteresis logic
-    if (!relayState && avgTemp > desiredTemperature + precisionTemperature) {
+    if ((starting || !relayState) && avgTemp > desiredTemperature + precisionTemperature) {
       relayState = true;
       digitalWrite(RELAY_PIN, LOW);  // Relay ON
-      state += "Relay: ON";
-    } else if (relayState && avgTemp < desiredTemperature - precisionTemperature) {
+      
+    } else if ((starting || relayState) && avgTemp < desiredTemperature - precisionTemperature) {
       relayState = false;
       digitalWrite(RELAY_PIN, HIGH); // Relay OFF
-      state += "Relay: OFF";
+      
     }
-
+    starting = false;
+    if (relayState) {
+      state += "Relay: ON<br/>";
+    } else {
+      state += "Relay: OFF<br/>";
+    }
+    state += "Switches back ON when " + String(desiredTemperature + precisionTemperature, 2) + " °C is reached.<br/>";
+    state += "Switches back OFF when " + String(desiredTemperature - precisionTemperature, 2) + " °C is reached.<br/>";
   } else {
     state = "Error reading temperature";
   }
