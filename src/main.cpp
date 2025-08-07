@@ -8,7 +8,7 @@ const char* ssid     = "FrostByte";
 const char* password = "fridgelord";
 
 // fixed to cooler controller mode (switch < and > around below to turn in a thermostat)
-float desiredTemperature = 4.0f; // celsius
+float desiredTemperature = 6.0f; // celsius
 float precisionTemperature = 1.0f; // celsius, i.e.  + and - range
 
 #define DHTPIN 2      // GPIO2
@@ -110,13 +110,15 @@ int sampleIndex = 0;
 bool bufferFilled = false;
 bool relayState = false;             // current state of the relay
 bool starting = true;
-
-String state = "";
+float avgTemp = 0.0f;
+unsigned long lastSwitched = millis();
+bool error = false;
 
 // put function declarations here:
 void createAccessPoint();
 char* buildPage(String);
 void respondPage(AsyncWebServerRequest *, String);
+String msToDhms(unsigned long ms);
 
 // put your setup code here, to run once:
 void setup() {
@@ -133,6 +135,8 @@ void loop() {
   float currentTemp = dht.readTemperature();
 
   if (!isnan(currentTemp)) {
+    error = false;
+
     tempSamples[sampleIndex] = currentTemp;
     sampleIndex++;
 
@@ -149,30 +153,22 @@ void loop() {
       sum += tempSamples[i];
     }
 
-    float avgTemp = sum / count;
-
-    state = "<h3>Temperature: " + String(avgTemp, 2) + " °C</h3><br/>";
+    avgTemp = sum / count;
 
     // hysteresis logic
     if ((starting || !relayState) && avgTemp > desiredTemperature + precisionTemperature) {
       relayState = true;
       digitalWrite(RELAY_PIN, LOW);  // Relay ON
-      
+      lastSwitched = millis();
     } else if ((starting || relayState) && avgTemp < desiredTemperature - precisionTemperature) {
       relayState = false;
       digitalWrite(RELAY_PIN, HIGH); // Relay OFF
-      
+      lastSwitched = millis();
     }
     starting = false;
-    if (relayState) {
-      state += "Relay: ON<br/>";
-    } else {
-      state += "Relay: OFF<br/>";
-    }
-    state += "Switches back ON when " + String(desiredTemperature + precisionTemperature, 2) + " °C is reached.<br/>";
-    state += "Switches back OFF when " + String(desiredTemperature - precisionTemperature, 2) + " °C is reached.<br/>";
   } else {
-    state = "Error reading temperature";
+
+    error = true;
   }
 
   delay(2000);  // avoid to fast repetition
@@ -184,6 +180,22 @@ double temperature = 20.4;
 void createAccessPoint() {
   WiFi.softAP(ssid, password);
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
+    String state;
+    if (!error)
+    {
+      state = "<h3>Temperature: " + String(avgTemp, 2) + " °C</h3><br/>";
+      if (relayState) {
+        state += "Relay: ON<br/>";
+        state += "Last switched ON " + msToDhms(millis() - lastSwitched) + " ago.<br/>";
+      } else {
+        state += "Relay: OFF<br/>";
+        state += "Last switched OFF " + msToDhms(millis() - lastSwitched) + " ago.<br/>";
+      }
+      state += "Switches back ON when " + String(desiredTemperature + precisionTemperature, 2) + " °C is reached.<br/>";
+      state += "Switches back OFF when " + String(desiredTemperature - precisionTemperature, 2) + " °C is reached.<br/>";
+    }
+    else
+        state = "Error reading temperature<br/>";
     respondPage(request, state);
   });
   server.begin();
@@ -208,4 +220,29 @@ void respondPage(AsyncWebServerRequest *request, String content) {
     char* page = buildPage(content);
     request->send_P(200, "text/html", page);
     delete[] page;
+}
+
+String msToDhms(unsigned long ms) {
+  const unsigned long MS_PER_DAY   = 86400000UL;
+  const unsigned long MS_PER_HOUR  = 3600000UL;
+  const unsigned long long MS_PER_MIN   = 60000UL;
+  const unsigned MS_PER_SEC   = 1000UL;
+
+  unsigned long days    = ms / MS_PER_DAY;      ms %= MS_PER_DAY;
+  unsigned long hours   = ms / MS_PER_HOUR;     ms %= MS_PER_HOUR;
+  unsigned long minutes = ms / MS_PER_MIN;      ms %= MS_PER_MIN;
+  unsigned long seconds = ms / MS_PER_SEC;      // remaining ms are ignored
+
+  // Build the string.  Using String concatenation is fine for small
+  // programs; for larger code bases you might prefer a fixed‑size
+  // char buffer and snprintf().
+  String out;
+  out.reserve(30);            // avoid reallocations
+
+  out += String(days)   + "d ";
+  out += String(hours)  + "h ";
+  out += String(minutes)+ "m ";
+  out += String(seconds)+"s";
+
+  return out;
 }
