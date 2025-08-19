@@ -1,6 +1,6 @@
 # FrostByte - ESP-01S Temperature-Controlled Relay with M2302 (DHT22)
 
-This project uses an ESP-01S Wi-Fi module together with an M2302 (DHT22) temperature and humidity sensor to control a relay. The relay switches ON or OFF based on the **average temperature over the last 60 seconds**, using hysteresis to avoid rapid toggling.
+This project uses an ESP-01S Wi-Fi module together with an M2302 (DHT22) temperature and humidity sensor to control a relay. The relay switches ON or OFF based on the **average temperature over the last 300 seconds**, using hysteresis to avoid rapid toggling.
 
 ## 🔧 Hardware Components
 
@@ -12,12 +12,12 @@ This project uses an ESP-01S Wi-Fi module together with an M2302 (DHT22) tempera
 
 ## ⚙️ Functionality
 
-- Takes one temperature reading every 2 seconds.
-- Stores the latest 30 readings (≈ 60 seconds).
+- Takes one temperature reading every 10 seconds.
+- Stores the latest 30 readings (≈ 5 minutes).
 - Calculates the average temperature from the buffer.
 - **Relay turns ON** when average temperature > **5.0°C**.
 - **Relay turns OFF** when average temperature < **3.0°C**.
-- No switching occurs between 3.0°C and 5.0°C (hysteresis zone).
+- No switching occurs between 5.0°C and 7.0°C (hysteresis zone).
 
 ## 🌐 Wi-Fi Access Point + Web Interface
 

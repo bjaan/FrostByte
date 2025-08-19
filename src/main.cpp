@@ -1,7 +1,7 @@
 /*  FrostByte – ESP‑01S temperature‑controlled relay
  *  -------------------------------------------------
  *  * Uses an ESP‑01S (ESP‑8266) as an access point
- *  * Reads a DHT22 every 2 s, keeps the last 30 samples
+ *  * Reads a DHT22 every 10 s, keeps the last 30 samples
  *  * Turns the relay on/off based on the average temperature
  *  * Serves a very small web page with the status
  */
@@ -93,7 +93,7 @@ void setup() {
  * ------------------------------------------------------------------ */
 void loop() {
   static unsigned long lastRead = 0;
-  const unsigned long READ_INTERVAL = 2000;   // 2 s
+  const unsigned long READ_INTERVAL = 10000;   // 10 s
 
   if (millis() - lastRead >= READ_INTERVAL) {
     lastRead = millis();
