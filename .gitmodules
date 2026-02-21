@@ -1,0 +1,3 @@
+[submodule "lib/myDHT"]
+	path = lib/myDHT
+	url = https://github.com/tonimatutinovic/myDHT

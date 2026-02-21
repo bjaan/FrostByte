@@ -32,6 +32,7 @@ The ESP-01S can act as its own Wi-Fi access point (AP) so you can connect to it 
 
 ```ini
 [env:esp01_1m]
+[env:esp01_1m]
 platform = espressif8266
 board = esp01_1m
 framework = arduino
@@ -41,10 +42,11 @@ lib_ldf_mode = chain
 lib_deps =
   ESP32Async/ESPAsyncTCP
   ESP32Async/ESPAsyncWebServer
-  adafruit/DHT sensor library@^1.4.3
-  adafruit/Adafruit Unified Sensor@^1.1.9
+upload_port = COM3
 ```
-Information on how to program an **ESP-01S** is available somewhere else.
+Information on how to program an **ESP-01S** is available somewhere else.  It is configured to have the programmer at port COM3.
+
+Using the more stable **myDHT(()) library to support the DHT22 on Arduino available at https://github.com/tonimatutinovic/myDHT as a Git Submodule.
 
 ## 🔌 Wiring & Connections
 

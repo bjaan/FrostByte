@@ -10,7 +10,7 @@
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <DHT.h>
+#include <myDHTPro.h>
 
 /* ------------------------------------------------------------------
  *  CONFIGURATION – change these if you want a different SSID / password
@@ -24,15 +24,14 @@ const float precisionTemperature = 1.0f;   // ± 1 °C hysteresis
 /* ------------------------------------------------------------------
  *  HARDWARE DEFINITIONS
  * ------------------------------------------------------------------ */
-#define DHTPIN     2          // GPIO2
-#define DHTTYPE    DHT22
+#define DHT_PIN     2          // GPIO2
 #define RELAY_PIN  0          // GPIO0
 
 /* ------------------------------------------------------------------
  *  GLOBALS
  * ------------------------------------------------------------------ */
 AsyncWebServer server(80);
-DHT dht(DHTPIN, DHTTYPE);
+MyDHT dht(DHT_PIN, DHT_AUTO); // auto-detect DHT11 or DHT22
 
 const int NUM_SAMPLES = 30;            // 30 readings @ 2 s → 60 s
 float  tempSamples[NUM_SAMPLES] = {0}; // sample buffer
@@ -98,20 +97,21 @@ void loop() {
   if (millis() - lastRead >= READ_INTERVAL) {
     lastRead = millis();
 
-    float currentTemp = dht.readTemperature(); // C
-    if (isnan(currentTemp)) {
+    DHTData data = dht.getData();  // Efficient reading
+    if (data.status == DHT_OK) {
+      error = false;
+    } else {
       error = true;
       return;          // skip the rest – no new sample
     }
-    error = false;
 
     /*  store sample in circular buffer  */
     if (sampleCount < NUM_SAMPLES) {
-        tempSamples[sampleCount++] = currentTemp;            // first 30 samples
+        tempSamples[sampleCount++] = data.temp;            // first 30 samples
     } else {
         // shift everything left by one
         memmove(tempSamples, tempSamples + 1, sizeof(float) * (NUM_SAMPLES - 1));
-        tempSamples[NUM_SAMPLES - 1] = currentTemp;   // newest sample at the end
+        tempSamples[NUM_SAMPLES - 1] = data.temp;         // newest sample at the end
     }
 
     /*  average calculation  */
