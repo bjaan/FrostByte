@@ -36,7 +36,6 @@ The web interface shows:
 
 ```ini
 [env:esp32dev]
-[env:esp32dev]
 platform = espressif32
 board = esp32dev
 framework = arduino
