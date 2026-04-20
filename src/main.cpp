@@ -1,16 +1,15 @@
 /*  FrostByte – ESP‑01S temperature‑controlled relay
  *  -------------------------------------------------
- *  * Uses an ESP‑01S (ESP‑8266) as an access point
+ *  * Uses an ESP32 with WiFi as an access point
  *  * Reads a DHT22 every 10 s, keeps the last 30 samples
  *  * Turns the relay on/off based on the average temperature
  *  * Serves a very small web page with the status
  */
 
-#include <Arduino.h>
-#include <ESP8266WiFi.h>
-#include <ESPAsyncTCP.h>
+#include <WiFi.h>
+#include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-#include <myDHTPro.h>
+#include <myDHT.h>
 
 /* ------------------------------------------------------------------
  *  CONFIGURATION – change these if you want a different SSID / password
@@ -24,8 +23,8 @@ const float precisionTemperature = 1.0f;   // ± 1 °C hysteresis
 /* ------------------------------------------------------------------
  *  HARDWARE DEFINITIONS
  * ------------------------------------------------------------------ */
-#define DHT_PIN     2          // GPIO2
-#define RELAY_PIN  0          // GPIO0
+#define DHT_PIN     4          // GPI4   Keep DHT on a “boring” GPIO
+#define RELAY_PIN   23         // GPIO23 safe output pin (common, safe, not a strapping pin)
 
 /* ------------------------------------------------------------------
  *  GLOBALS
