@@ -19,6 +19,10 @@ const char *password = "fridgelord";
 
 const float desiredTemperature   = 6.0f;   // °C  (cooler‑controller mode)
 const float precisionTemperature = 1.0f;   // ± 1 °C hysteresis
+const unsigned long READ_INTERVAL = 10000; // 10 s between reading cycles
+const int DHT_RETRIES = 3;                 // DHT reads are timing-sensitive
+const unsigned long DHT_RETRY_DELAY = 2200;
+const int MAX_CONSECUTIVE_FAILURES = 3;    // show error after 3 missed cycles
 
 /* ------------------------------------------------------------------
  *  HARDWARE DEFINITIONS
@@ -32,7 +36,7 @@ const float precisionTemperature = 1.0f;   // ± 1 °C hysteresis
 AsyncWebServer server(80);
 MyDHT dht(DHT_PIN, DHT_AUTO); // auto-detect DHT11 or DHT22
 
-const int NUM_SAMPLES = 30;            // 30 readings @ 2 s → 60 s
+const int NUM_SAMPLES = 30;            // 30 readings @ 10 s -> 300 s
 float  tempSamples[NUM_SAMPLES] = {0}; // sample buffer
 int    sampleCount = 0;                // number of samples in buffer
 
@@ -42,6 +46,8 @@ bool  error        = false;   // DHT read error
 
 float avgTemp      = 0.0f;
 unsigned long lastSwitched = 0;   // time of the last state change
+unsigned long lastGoodRead = 0;   // time of the last valid DHT sample
+int consecutiveFailures = 0;
 
 /* ------------------------------------------------------------------
  *  PROGMEM HTML – split into header/footer to keep the page small
@@ -71,6 +77,7 @@ const char footer_html[] PROGMEM = R"rawliteral(
  *  FUNCTION PROTOTYPES
  * ------------------------------------------------------------------ */
 void createAccessPoint();
+bool readTemperature(float &temperature);
 String buildPage(const String &content);
 String msToDhms(unsigned long ms);
 
@@ -91,32 +98,33 @@ void setup() {
  * ------------------------------------------------------------------ */
 void loop() {
   static unsigned long lastRead = 0;
-  const unsigned long READ_INTERVAL = 10000;   // 10 s
 
   if (millis() - lastRead >= READ_INTERVAL) {
     lastRead = millis();
 
-    DHTData data = dht.getData();  // Efficient reading
-    if (data.status == DHT_OK) {
-      error = false;
-    } else {
-      error = true;
-      return;          // skip the rest – no new sample
+    float temperature = 0.0f;
+    if (!readTemperature(temperature)) {
+      consecutiveFailures++;
+      error = sampleCount == 0 || consecutiveFailures >= MAX_CONSECUTIVE_FAILURES;
+      return;          // keep the last good average and relay state
     }
+    consecutiveFailures = 0;
+    error = false;
+    lastGoodRead = millis();
 
     /*  store sample in circular buffer  */
     if (sampleCount < NUM_SAMPLES) {
-        tempSamples[sampleCount++] = data.temp;            // first 30 samples
+        tempSamples[sampleCount++] = temperature;          // first 30 samples
     } else {
         // shift everything left by one
         memmove(tempSamples, tempSamples + 1, sizeof(float) * (NUM_SAMPLES - 1));
-        tempSamples[NUM_SAMPLES - 1] = data.temp;         // newest sample at the end
+        tempSamples[NUM_SAMPLES - 1] = temperature;       // newest sample at the end
     }
 
     /*  average calculation  */
     float sum = 0;
-    for (int i = 0; i < NUM_SAMPLES; ++i) sum += tempSamples[i];
-    avgTemp = sum / NUM_SAMPLES;   // after the first 30 samples this is the true average
+    for (int i = 0; i < sampleCount; ++i) sum += tempSamples[i];
+    avgTemp = sum / sampleCount;
 
     /*  hysteresis – turn relay on/off  */
     if ((starting || !relayState) && avgTemp > desiredTemperature + precisionTemperature) {
@@ -132,6 +140,22 @@ void loop() {
   }
 }
 
+bool readTemperature(float &temperature) {
+  for (int attempt = 0; attempt < DHT_RETRIES; ++attempt) {
+    DHTData data = dht.getData();
+    if (data.status == DHT_OK) {
+      temperature = data.temp;
+      return true;
+    }
+
+    if (attempt < DHT_RETRIES - 1) {
+      delay(DHT_RETRY_DELAY);
+    }
+  }
+
+  return false;
+}
+
 /* ------------------------------------------------------------------
  *  ACCESS POINT + WEB SERVER
  * ------------------------------------------------------------------ */
@@ -143,6 +167,11 @@ void createAccessPoint() {
     if (!error) {
       state = "<div class='status'>Temperature: ";
       state += String(avgTemp, 2) + " °C</div>";
+
+      if (consecutiveFailures > 0) {
+        state += "<div class='status'>Using last good reading from ";
+        state += msToDhms(millis() - lastGoodRead) + " ago</div>";
+      }
 
       state += "<div class='status'>Relay: ";
       state += relayState ? "ON" : "OFF";
